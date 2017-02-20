@@ -1,0 +1,77 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "24.0.2"
+
+    defaultConfig {
+        applicationId "com.example.multichannelpackage"
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+
+        multiDexEnabled true //突破应用方法数65535的一个限制
+        manifestPlaceholders = [UMENG_CHANNEL_CALUE:"umeng"]
+    }
+
+    //添加签名文件配置
+    signingConfigs{
+        release{//为release包添加签名文件。release{}、debug{}可以任意命名
+            storeFile file("D:\\qunadai\\keystore\\qunadai\\keystore") //也可写相对路径：如("common.jks")
+            storePassword "a123456"
+            keyAlias "china"
+            keyPassword "a123456"
+        }
+
+        debug{
+
+        }
+    }
+
+    //真正的多渠道版本支持
+    productFlavors {
+        xiaomi {
+            manifestPlaceholders=[UMENG_CHANNEL_CALUE:"xiaomi"]//可注释也可不注释此代码
+        }
+        baidu {
+            //manifestPlaceholders=[UMENG_CHANNEL_CALUE:"baidu"]
+        }
+        yingyongbao {}
+        c360 {}
+
+        productFlavors.all {
+            flavor -> flavor.manifestPlaceholders = [UMENG_CHANNEL_VALUE: name]
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release //指定签名文件，若不指定，仍是debug包
+
+            //指定release包的文件名为对应的渠道名。若不重新命名，默认打包后的名称是：项目包名-渠道名.apk
+            applicationVariants.all{ variant ->
+                variant.outputs.each{ output ->
+                    def outFile=output.outputFile
+                    if (outFile != null && outFile.name.endsWith(".apk")) {
+                        def fileName="${variant.productFlavors[0].name}"+".apk"
+                        output.outputFile=new File(outFile.parent,fileName);
+                    }
+                }
+            }
+
+        }
+    }
+
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.android.support:design:23.4.0'
+    compile 'com.umeng.analytics:analytics:latest.integration'//友盟Gradle依赖
+
+}
